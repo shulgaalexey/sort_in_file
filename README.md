@@ -23,6 +23,20 @@ BucketSort(arr[], n)
 * Sort buckets individually
 * Concatenate buckets
 
+
+
+Detailed task:
+
+Sort a binary file of unsigned 32-bit integers in ascending order in the
+assumption that the file size is significantly larger than available memory.
+
+Expected result
+C++ source code with a project or a make file of a console application,
+that is built with VS 2010/2013 or gcc(g++) 4.6/4.8
+The application may assume the execution on a semi-idle multi-core
+64bit OS with plenty of HD space.
+
+
 Workflow
 --------
 <img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_workflow.png" alt="Sort Workflow" style="width:500px"/>
