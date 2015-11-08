@@ -4,6 +4,8 @@
 #include "resource_monitor.h"
 #include "bucket.h"
 
+using namespace std;
+
 resource_monitor::resource_monitor()
 {
 }
@@ -31,11 +33,11 @@ void resource_monitor::unregister_bucket(bucket *b)
 void resource_monitor::items_added(size_t cnt)
 {
 	_cur_items_in_memory += cnt;
-	if(_cur_mem_usage > MAX_ITEM_COUNT_IN_MEMORY_ALLOWED)
+	if(_cur_items_in_memory > MAX_ITEM_COUNT_IN_MEMORY_ALLOWED)
 		flush_buckets();
 }
 
-void resource_monitor::items_released(int cnt)
+void resource_monitor::items_released(size_t cnt)
 {
 	if(_cur_items_in_memory <= cnt)
 		_cur_items_in_memory = 0;
@@ -46,9 +48,9 @@ void resource_monitor::items_released(int cnt)
 
 void resource_monitor::flush_buckets()
 {
-	for(map<bucket *, int>::iterator it = _buckets.begint();
+	for(map<bucket *, int>::iterator it = _buckets.begin();
 			it != _buckets.end(); ++it) {
-		bucket *b = *it->first;
+		bucket *b = it->first;
 		if(b && (it->second == 1))
 			b->flush();
 	}

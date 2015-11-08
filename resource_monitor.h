@@ -3,13 +3,16 @@
  */
 #ifndef _RESOURCE_MONITOR_H_INCLUDED_
 #define _RESOURCE_MONITOR_H_INCLUDED_
+
+#include <iostream>
 #include <map>
+
 
 class bucket;
 
 class resource_monitor {
 	private:
-		map<bucket *, int> _buckets;
+		std::map<bucket *, int> _buckets;
 		size_t _cur_items_in_memory;
 
 	public:

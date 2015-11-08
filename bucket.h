@@ -11,7 +11,7 @@
 class bucket {
 	private:
 		std::string _file_name;
-		vector<DATA_TYPE> _cache;
+		std::vector<DATA_TYPE> _cache;
 	public:
 		bucket(const std::string &file_name);
 		virtual ~bucket();
@@ -21,9 +21,11 @@ class bucket {
 	public:
 		void add(const DATA_TYPE &item);
 		void sort();
-		void trace(const std::string &message);
-	protected:
 		void flush();
+		void read(char **buffer, size_t *length);
+		void trace(const std::string &message);
+	public:
+		static std::string generate_name(const size_t bucket_no);
 };
 
 #endif /* _BUCKET_H_INCLUDED_ */

@@ -43,7 +43,7 @@ Workflow
 
 How to build
 -----------
-
+g++ -Wall -g -o test sort_in_file.cpp bucket.cpp resource_monitor.cpp utils.cpp
 
 How to run
 ----------
