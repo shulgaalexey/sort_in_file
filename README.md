@@ -39,7 +39,11 @@ The application may assume the execution on a semi-idle multi-core
 
 Workflow
 --------
-<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_workflow.png" alt="Sort Workflow" style="width:500px"/>
+
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_conceptual_workflow.png" alt="Sort Conceptual Workflow" style="width:500px"/>
+
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/data_flow.png" alt="Data Flow" style="width:500px"/>
+
 
 How to build
 -----------

@@ -66,7 +66,7 @@ int main()
 {
 	srand(time(NULL));
 
-	for(int test = 0; test < 20; test ++) {
+	for(int test = 0; test < 5; test ++) {
 		std::cout << "Test: " << test << "..." << std::endl;
 
 		const std::string input_file_name = "test.dat";
