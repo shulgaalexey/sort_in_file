@@ -43,15 +43,21 @@ Workflow
 
 How to build
 -----------
-g++ -Wall -g -o test sort_in_file.cpp bucket.cpp resource_monitor.cpp utils.cpp
+g++ -Wall -g -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp utils.cpp
 
 How to run
 ----------
+./test
 
 
 Reference
 ---------
+Bucket Sort algorithm
 
 
 TODO
 ----
+* more tests
+* code coverage
+* concatenation by segments, not a while bucket files
+* multithreading
