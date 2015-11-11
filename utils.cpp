@@ -1,41 +1,75 @@
 /**
- * utils.cpp
+* utils.cpp
  */
 
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
 #include "common.h"
+#include "bucket_manager.h"
 
-using namespace std;
+static bucket_manager reference(NULL);
 
-void generate_input_file(const string &file_name, const size_t N)
+void test_generate_input_file(const std::string &file_name, const size_t N)
 {
+
 	//cout << "Writing data into test file..." << endl;
-	ofstream f;
-	f.open(file_name.c_str(), ios::out | ios::binary);
+	std::ofstream f;
+	f.open(file_name.c_str(), std::ios::out | std::ios::binary);
 	if(!f.is_open()) {
-		cout << "ERROR Opening File: " << file_name << endl;
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
 		return;
 	}
 	for(size_t i = 0; i < N; i ++) {
 		//DATA_TYPE val = (DATA_TYPE)rand();
-		int tmp = VAL_MIN + rand() % VAL_MAX;
+		int tmp = reference.get_val_min() +
+			rand() % reference.get_val_max();
 		if(tmp < 0)
 			tmp *= -1;
 		DATA_TYPE val = (DATA_TYPE)tmp;
+		//val = 3;
 		f.write((char *)(&val), sizeof(val));
 	}
 	f.close();
 }
 
-void trace_file(const string &file_name)
+bool is_file_sorted(const std::string &file_name)
 {
-	cout << "File " << file_name << " contents:" << endl;
-	ifstream f;
-	f.open(file_name.c_str(), ios::in | ios::binary);
+	std::ifstream f;
+	f.open(file_name.c_str(), std::ios::in | std::ios::binary);
 	if(!f.is_open()) {
-		cout << "ERROR Opening File: " << file_name << endl;
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
+		return false;
+	}
+	DATA_TYPE val = reference.get_val_min();
+	DATA_TYPE prev_val = reference.get_val_min();
+	bool ok = true;
+	while(true) {
+		f.read((char *)(&val), sizeof(val));
+		if(f.eof())
+			break;
+		if(val < prev_val) {
+			ok = false;
+			break;
+		}
+		prev_val = val;
+	}
+	f.close();
+	return ok;
+}
+
+bool test_check_file(const std::string &file_name)
+{
+	return is_file_sorted(file_name);
+}
+
+void trace_file(const std::string &file_name)
+{
+	std::cout << "File " << file_name << " contents:" << std::endl;
+	std::ifstream f;
+	f.open(file_name.c_str(), std::ios::in | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
 		return;
 	}
 	f.seekg (0, f.beg);
@@ -44,10 +78,8 @@ void trace_file(const string &file_name)
 		f.read((char *)(&val), sizeof(val));
 		if(f.eof())
 			break;
-		cout << val << " " ;
+		std::cout << val << " " ;
 	}
 	f.close();
-	cout << endl << endl;
+	std::cout << std::endl << std::endl;
 }
-
-
