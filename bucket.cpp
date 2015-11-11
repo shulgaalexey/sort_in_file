@@ -133,6 +133,6 @@ void bucket::flush()
 	_cache.clear();
 
 	/* Notify the global resource monitor, that one more item was added */
-	resource_monitor::get_ptr()->items_added(_cache.size());
+	resource_monitor::get_ptr()->items_released(_cache.size());
 }
 
