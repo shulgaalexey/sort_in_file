@@ -42,166 +42,53 @@
  */
 
 #include <iostream>
-#include <vector>
 
 // For generating test input
-#include <fstream>
 #include <stdlib.h>
 #include <time.h>
 
-
-// For sorting each bucket
+// System constants
 #include "common.h"
 
-#include "bucket.h"
+// File sorting algorithm
+#include "sort_file.h"
 
-using namespace std;
 
-extern void trace_file(const string &file_name);
-extern void generate_input_file(const string &file_name, const size_t N);
+extern void test_generate_input_file(const std::string &file_name,
+				     const size_t N);
 
-/* TODO: implement bucket_manager */
-vector<bucket *> _buckets(BUCKET_COUNT, NULL);
+extern void trace_file(const std::string &file_name);
 
-void open_buckets()
-{
-	for(size_t i = 0; i < _buckets.size(); i ++)
-		_buckets[i] = new bucket(bucket::generate_name(i));
-}
+extern bool test_check_file(const std::string &file_name);
 
-void close_buckets()
-{
-	for(size_t i = 0; i < _buckets.size(); i ++) {
-		bucket *b = _buckets[i];
-		if(b)
-			delete b;
-		_buckets[i] = NULL;
-	}
-}
-
-void fluch_buckets()
-{
-	for(size_t i = 0; i < _buckets.size(); i ++)
-		if(_buckets[i])
-			_buckets[i]->flush();
-}
-
-/* TODO: implement empty_bucket */
-
-void sort_buckets()
-{
-	for(size_t i = 0; i < _buckets.size(); i ++)
-		if(_buckets[i])
-			_buckets[i]->sort();
-}
-
-size_t get_bucket_no(const DATA_TYPE &val)
-{
-	return size_t(val / BUCKET_RANGE_SIZE);
-}
-
-void read_input_file(const string &file_name)
-{
-	ifstream f;
-	f.open(file_name.c_str(), ios::in | ios::binary);
-	if(!f.is_open()) {
-		cout << "ERROR Opening File: " << file_name << endl;
-		return;
-	}
-	f.seekg (0, f.beg);
-	DATA_TYPE val = 0;
-	while(true) {
-		f.read((char *)(&val), sizeof(val));
-		if(f.eof())
-			break;
-		size_t bucket_no = get_bucket_no(val);
-		if(_buckets[bucket_no])
-			_buckets[bucket_no]->add(val);
-	}
-	f.close();
-}
-
-void concatentate_buckets(const string &result_file_name)
-{
-	ofstream r;
-	r.open(result_file_name.c_str(), ios::out | ios::binary);
-	if(!r.is_open()) {
-		cout << "ERROR Opening File: " << result_file_name << endl;
-		return;
-	}
-	for(size_t i = 0; i < _buckets.size(); i ++) {
-		if(!_buckets[i])
-			continue;
-
-		char *buffer = NULL;
-		size_t length = 0;
-		_buckets[i]->read(&buffer, &length);
-		r.write(buffer, length);
-		delete [] buffer;
-	}
-	r.close();
-}
-
-bool check_file(const string &file_name)
-{
-	ifstream f;
-	f.open(file_name.c_str(), ios::in | ios::binary);
-	if(!f.is_open()) {
-		cout << "ERROR Opening File: " << file_name << endl;
-		return false;
-	}
-	f.seekg (0, f.beg);
-	DATA_TYPE val = 0;
-	DATA_TYPE prev_val = VAL_MIN;
-	bool ok = true;
-	while(true) {
-		f.read((char *)(&val), sizeof(val));
-		if(f.eof())
-			break;
-		if(val < prev_val) {
-			ok = false;
-			break;
-		}
-	}
-	f.close();
-	return ok;
-}
 
 int main()
 {
 	srand(time(NULL));
 
-	for(int test = 0; test < 50; test ++) {
-		cout << "Test: " << test << "..." << endl;
+	for(int test = 0; test < 20; test ++) {
+		std::cout << "Test: " << test << "..." << std::endl;
 
-		generate_input_file("test.dat", INPUT_SIZE);
+		const std::string input_file_name = "test.dat";
+		const std::string output_file_name = "result.dat";
 
-		if(__debug_trace)
-			trace_file("test.dat");
+		/* 1. Prepare test file with items to be sorted */
+		test_generate_input_file(input_file_name, INPUT_SIZE);
+		if(test_check_file(input_file_name))
+			std::cout << "WOOOAA input file is sorted already"
+				<< std::endl;
 
-		open_buckets();
-		read_input_file("test.dat");
-		fluch_buckets();
+		/* 2. Run sort algorithm */
+		sort_file s(input_file_name, output_file_name);
+		s.start();
 
-		if(__debug_trace)
-			for(size_t i = 0; i < BUCKET_COUNT; i ++)
-				trace_file(bucket::generate_name(i));
-
-		sort_buckets();
-
-		if(__debug_trace)
-			for(size_t i = 0; i < BUCKET_COUNT; i ++)
-				trace_file(bucket::generate_name(i));
-
-		concatentate_buckets("result.dat");
-		close_buckets();
-
-		if(__debug_trace)
-			trace_file("result.dat");
-
-		if(!check_file("result.dat")) {
-			cout << "ERROR OF SORTING!!!" << endl;
-			trace_file("test.dat");
+		/* 3. Check if sort was done correct */
+		if(test_check_file(output_file_name))
+			std::cout << "OK" << std::endl;
+		else {
+			std::cout << "ERROR OF SORTING!!!" << std::endl;
+			trace_file(input_file_name);
+			break;
 		}
 	}
 	return 0;
