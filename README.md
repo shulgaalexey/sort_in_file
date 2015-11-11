@@ -45,7 +45,7 @@ How to build
 -----------
 g++ -Wall  -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp utils.cpp
 
-(use -o for debug)
+(use -g for debug in gdb)
 
 
 How to run
