@@ -10,10 +10,10 @@ This is a demo implementation of a module, sorting a file of something.
 
 Main requirements are following:
 * the file may be small, big or very big
-* the file may contain integers or something else
+* the file may contain unsigned integers or something else
 * the sorting may be performed in a single-treaded or multi-threaded mode
 
-The module implements a conception of Bucket Sort, which defined as following:
+The module implements a conception of Bucket Sort, which is defined as following:
 
 BucketSort(arr[], n)
 * Create n empty buckets
@@ -43,7 +43,10 @@ Workflow
 
 How to build
 -----------
-g++ -Wall -g -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp utils.cpp
+g++ -Wall  -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp utils.cpp
+
+(use -o for debug)
+
 
 How to run
 ----------
@@ -57,7 +60,7 @@ Bucket Sort algorithm
 
 TODO
 ----
-* more tests
+* more tests (small imput, huge imput, input consisting a number of single value, etc.)
 * code coverage
-* concatenation by segments, not a while bucket files
+* bucket concatenation segment-by-segments, not a whole bucket file
 * multithreading
