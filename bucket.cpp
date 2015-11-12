@@ -78,6 +78,7 @@ size_t bucket::get_bucket_file_length() const
 
 void bucket::sort()
 {
+	std::cout << "sorting bucket: " << _file_name << std::endl;
 	/* Check the length of bucket file in order to decide if we can sort in
 	*  in memory or should run the sort_file algorithm over the bucket file
 	*/
