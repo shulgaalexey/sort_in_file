@@ -9,9 +9,9 @@
 
 
 bucket_manager::bucket_manager(resource_monitor *mon)
-	: _bucket_number(100)	/* 5, 10, 100 */
+	: _bucket_number(5)	/* 5, 10, 100 */
 	  , _val_min(0)
-	  , _val_max(UINT_MAX)	/* 30, 100, 1000, UINT_MAX */
+	  , _val_max(30)	/* 30, 100, 1000, UINT_MAX */
 	  , _bucket_range_size((_val_max - _val_min) / _bucket_number)
 	  , _resource_mon(mon)
 {
