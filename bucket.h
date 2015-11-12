@@ -41,12 +41,13 @@ public:
 					 const std::string &tag);
 protected:
 	resource_monitor *get_resource_monitor() const;
+	bucket_manager *get_bucket_manager() const;
 protected:
 	size_t get_bucket_file_length() const;
 	void sort_in_memory();
 	void sort_in_file();
-protected:
-	bucket_manager *get_bucket_manager() const;
+
+	friend class sort_file_async; /* TODO: remove in release */
 };
 
 
