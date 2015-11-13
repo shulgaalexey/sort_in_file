@@ -37,6 +37,21 @@ that is built with VS 2010/2013 or gcc(g++) 4.6/4.8
 The application may assume the execution on a semi-idle multi-core
 64bit OS with plenty of HD space.
 
+
+Design View
+-----------
+
+General data flow is as following
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/data_flow.png" alt="Data Flow" style="width:500px"/>
+
+Data flow in multithreaded environment is following
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/multithread_data_flow.png" alt="Multithread Data Flow" style="width:500px"/>
+
+
+In theory it might be developed as a uniform framework for both single thread and multi thread environments
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_conceptual_workflow.png" alt="Sort Conceptual Workflow" style="width:500px"/>
+
+
 How to use
 ----------
 The product of the project is a pair of classes, performing sort of binary files.
@@ -54,6 +69,7 @@ sort_file s(input_file_name, output_file_name);
 s.start();
 ```
 
+
 * sort_file_async - sorting a file in a multithread mode
 
 ```
@@ -69,20 +85,6 @@ s.start();
 ```
 
 
-Workflow
---------
-
-General data flow is as following
-<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/data_flow.png" alt="Data Flow" style="width:500px"/>
-
-Data flow in multithreaded environment is following
-<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/multithread_data_flow.png" alt="Multithread Data Flow" style="width:500px"/>
-
-
-In theory it might be developed as a uniform framework for both single thread and multi thread environments
-<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_conceptual_workflow.png" alt="Sort Conceptual Workflow" style="width:500px"/>
-
-
 How to build
 -----------
 g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp -lpthread
@@ -90,7 +92,6 @@ g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp
 g++/gcc 4.8.1
 
 Note: use -g for debug in gdb
-
 
 
 How to run
@@ -105,6 +106,7 @@ Experiments
 
 Tests demonstrated that multithreaded variant is about 35% faster than a
 singlethreaded one.
+
 Test conditions were following:
  * input file item number: 5 000 000
  * item value range: 0 ... UINT_MAX
