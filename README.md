@@ -37,6 +37,37 @@ that is built with VS 2010/2013 or gcc(g++) 4.6/4.8
 The application may assume the execution on a semi-idle multi-core
 64bit OS with plenty of HD space.
 
+How to use
+----------
+The product of the project is a pair of classes, performing sort of binary files.
+* sort_file - sorting a file in a singlethread mode
+
+```
+#include "sort_file.h"
+
+// Defining input and output file names
+const std::string input_file_name = "test.dat";
+const std::string output_file_name = "result.dat";
+
+// Sorting a file (single thread)
+sort_file s(input_file_name, output_file_name);
+s.start();
+```
+
+* sort_file_async - sorting a file in a multithread mode
+
+```
+#include "sort_file_async.h"
+
+// Defining input and output file names
+const std::string input_file_name = "test.dat";
+const std::string output_file_name = "result.dat";
+
+// Sorting a file (multithread)
+sort_file_async s(input_file_name, output_file_name);
+s.start();
+```
+
 
 Workflow
 --------
@@ -100,4 +131,5 @@ TODO
 * more tests (small imput, huge imput, input consisting a number of single value, etc.)
 * code coverage
 * code clean-up
+* wrap all sort related classes in "sf" workspace
 
