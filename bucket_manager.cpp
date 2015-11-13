@@ -1,17 +1,19 @@
 /**
- * bucket_manager.h
+ * bucket_manager.cpp
  */
 
 #include <iostream>
 #include <climits>
+#include <fstream>
 #include "bucket_manager.h"
 #include "bucket.h"
 
+extern void trace_file(const std::string &file_name);
 
 bucket_manager::bucket_manager(resource_monitor *mon)
-	: _bucket_number(5)	/* 5, 10, 100 */
-	  , _val_min(0)
-	  , _val_max(30)	/* 30, 100, 1000, UINT_MAX */
+	: _bucket_number(BUCKET_NUMBER)
+	  , _val_min(MIN_VALUE)
+	  , _val_max(MAX_VALUE)
 	  , _bucket_range_size((_val_max - _val_min) / _bucket_number)
 	  , _resource_mon(mon)
 {
@@ -111,3 +113,59 @@ resource_monitor *bucket_manager::get_resource_monitor() const
 {
 	return _resource_mon;
 }
+
+
+file_concatenator::file_concatenator(const std::string &dst,
+				     const std::string &src)
+	: _dst(dst)
+	  , _src(src)
+	  , _block_size(MAX_ITEM_COUNT_IN_MEMORY_ALLOWED)
+{
+}
+
+file_concatenator::~file_concatenator()
+{
+}
+
+void file_concatenator::start()
+{
+	std::ifstream b;
+	b.open(_src.c_str(), std::ios::in | std::ios::binary);
+	if(!b.is_open()) {
+		std::cout << "ERROR Opening File: " << _src << std::endl;
+		return;
+	}
+	if(b) {
+		char *buffer = new char [_block_size];
+		while(b) {
+			b.read(buffer, _block_size);
+
+			if(b)
+				append_to_dst(buffer, _block_size);
+
+			else {
+				append_to_dst(buffer, b.gcount());
+				break;
+			}
+		}
+		delete [] buffer;
+		b.close();
+	}
+}
+
+void file_concatenator::append_to_dst(char *buffer, size_t size)
+{
+	if(!buffer || (size == 0))
+		return;
+
+	std::ofstream r;
+	r.open(_dst.c_str(), std::ios::out | std::ios::binary | std::ios::app);
+	if(!r.is_open()) {
+		std::cout << "ERROR Opening File: " << _dst << std::endl;
+		return;
+	}
+
+	r.write(buffer, size);
+	r.close();
+}
+

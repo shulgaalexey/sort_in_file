@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include <sys/timeb.h>
 #include "common.h"
 #include "bucket_manager.h"
 
@@ -83,3 +84,20 @@ void trace_file(const std::string &file_name)
 	f.close();
 	std::cout << std::endl << std::endl;
 }
+
+int __get_milli_count()
+{
+	timeb tb;
+	ftime(&tb);
+	int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
+	return nCount;
+}
+
+int __get_milli_span(int nTimeStart)
+{
+	int nSpan = __get_milli_count() - nTimeStart;
+	if (nSpan < 0)
+		nSpan += 0x100000 * 1000;
+	return nSpan;
+}
+

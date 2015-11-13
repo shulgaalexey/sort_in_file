@@ -59,4 +59,19 @@ protected:
 	resource_monitor *get_resource_monitor() const;
 };
 
+
+class file_concatenator {
+private:
+	std::string _dst;
+	std::string _src;
+	const size_t _block_size;
+public:
+	file_concatenator(const std::string &dst, const std::string &src);
+	virtual ~file_concatenator();
+public:
+	void start();
+protected:
+	void append_to_dst(char *buf, size_t size);
+};
+
 #endif /* _BUCKET_MANAGER_H_INCLUDED_ */

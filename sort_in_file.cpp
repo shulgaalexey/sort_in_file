@@ -52,6 +52,7 @@
 
 // File sorting algorithm
 #include "sort_file.h"
+#include "sort_file_async.h"
 
 
 extern void test_generate_input_file(const std::string &file_name,
@@ -61,12 +62,17 @@ extern void trace_file(const std::string &file_name);
 
 extern bool test_check_file(const std::string &file_name);
 
+int __get_milli_count();
+
+int __get_milli_span(int nTimeStart);
 
 int main()
 {
 	srand(time(NULL));
 
-	for(int test = 0; test < 5; test ++) {
+	const int start_time = __get_milli_count();
+
+	for(size_t test = 0; test < TEST_NUMBER; test ++) {
 		std::cout << "Test: " << test << "..." << std::endl;
 
 		const std::string input_file_name = "test.dat";
@@ -78,9 +84,22 @@ int main()
 			std::cout << "WOOOAA input file is sorted already"
 				<< std::endl;
 
-		/* 2. Run sort algorithm */
-		sort_file s(input_file_name, output_file_name);
-		s.start();
+		/* 2. Run sort algorithm
+		 * The synchronous alg is about 15% worse than
+		 * asynchronous one */
+		if(test % 2) {	/* switch both algs */
+		//if(false) {		/* run only async */
+		//if(true) {		/* run only sync */
+			std::cout << "sorting in a single thread......"
+				<< std::endl;
+			sort_file s(input_file_name, output_file_name);
+			s.start();
+		} else {
+			std::cout << "sorting in multi threads......"
+				<< std::endl;
+			sort_file_async s(input_file_name, output_file_name);
+			s.start();
+		}
 
 		/* 3. Check if sort was done correct */
 		if(test_check_file(output_file_name))
@@ -88,9 +107,13 @@ int main()
 		else {
 			std::cout << "ERROR OF SORTING!!!" << std::endl;
 			trace_file(input_file_name);
+			trace_file(output_file_name);
 			break;
 		}
 	}
+
+	const int milsec = __get_milli_span(start_time);
+	std::cout << "Tests finished in " << milsec << " milsec" << std::endl;
+
 	return 0;
 }
-

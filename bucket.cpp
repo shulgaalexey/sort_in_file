@@ -48,6 +48,11 @@ std::string bucket::generate_name(const size_t bucket_no,
 	return ss.str();
 }
 
+std::string bucket::get_file_name() const
+{
+	return _file_name;
+}
+
 void bucket::add(const DATA_TYPE &item)
 {
 	_cache.push_back(item);
@@ -78,7 +83,6 @@ size_t bucket::get_bucket_file_length() const
 
 void bucket::sort()
 {
-	std::cout << "sorting bucket: " << _file_name << std::endl;
 	/* Check the length of bucket file in order to decide if we can sort in
 	*  in memory or should run the sort_file algorithm over the bucket file
 	*/
@@ -235,3 +239,4 @@ bucket_manager *bucket::get_bucket_manager() const
 {
 	return _bucket_mgr;
 }
+

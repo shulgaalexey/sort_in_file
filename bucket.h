@@ -30,6 +30,10 @@ public:
 	void add(const DATA_TYPE &item);
 	void sort();
 	void flush();
+	std::string get_file_name() const;
+	size_t get_bucket_file_length() const;
+
+	/* TODO: delete because not used */
 	void read(char **buffer, size_t *length);
 
 	/* Read the whole contents of the bucket
@@ -43,7 +47,6 @@ protected:
 	resource_monitor *get_resource_monitor() const;
 	bucket_manager *get_bucket_manager() const;
 protected:
-	size_t get_bucket_file_length() const;
 	void sort_in_memory();
 	void sort_in_file();
 

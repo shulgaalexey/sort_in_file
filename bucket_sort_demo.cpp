@@ -77,4 +77,3 @@ int main()
 	print(input);
 	return 0;
 }
-

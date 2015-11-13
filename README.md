@@ -53,14 +53,34 @@ In theory it might be developed as a uniform framework for both single thread an
 
 How to build
 -----------
-g++ -Wall  -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp utils.cpp
+g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp -lpthread
 
 (use -g for debug in gdb)
+
+g++/gcc 4.8.`1
 
 
 How to run
 ----------
 ./test
+
+
+Experiments
+-----------
+
+### Comparison of singlethreaded and multythreaded
+
+Tests demonstrated that multithreaded variant is about 35% faster than a single
+threaded one.
+Test conditions were following:
+ * input file item number: 5000000
+ * item value range: 0 ... UINT_MAX
+ * bucket number: 100
+ * maximum number of items in memory: 5000
+
+### Sorting a huge file
+Sorting 500 000 000 items asynchronously with the same conditions
+took 5 min on my machine
 
 
 Reference
@@ -72,5 +92,5 @@ TODO
 ----
 * more tests (small imput, huge imput, input consisting a number of single value, etc.)
 * code coverage
-* bucket concatenation segment-by-segments, not a whole bucket file
-* multithreading
+* code clean-up
+

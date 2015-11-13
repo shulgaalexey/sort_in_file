@@ -65,14 +65,16 @@ void sort_file::start()
 	get_bucket_manager()->fluch_buckets();
 
 	if(__debug_trace)
-		for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++)
+		for(size_t i = 0;
+		    i < get_bucket_manager()->get_bucket_number(); i ++)
 			trace_file(bucket::generate_name(i, _tag));
 
 	/* 3. Sort buckets individually */
 	sort_buckets();
 
 	if(__debug_trace)
-		for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++)
+		for(size_t i = 0;
+		    i < get_bucket_manager()->get_bucket_number(); i ++)
 			trace_file(bucket::generate_name(i, _tag));
 
 	/* 4. Concatenate all buckets into an output */
@@ -87,6 +89,11 @@ void sort_file::start()
 }
 
 void sort_file::pause()
+{
+	/* TODO: */
+}
+
+void sort_file::resume()
 {
 	/* TODO: */
 }
@@ -130,7 +137,7 @@ void sort_file::sort_buckets()
 
 void sort_file::concatentate_buckets()
 {
-	std::ofstream r;
+	/*std::ofstream r;
 	r.open(_output_file_name.c_str(), std::ios::out | std::ios::binary);
 	if(!r.is_open()) {
 		std::cout << "ERROR Opening File: " << _output_file_name
@@ -150,7 +157,21 @@ void sort_file::concatentate_buckets()
 		r.write(buffer, length);
 		delete [] buffer;
 	}
-	r.close();
+	r.close();*/
+
+
+	/* Remove the output file if it exists */
+	remove(_output_file_name.c_str());
+
+	for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++) {
+		bucket *b = get_bucket_manager()->get_bucket(i);
+		if(!b || (b->get_bucket_file_length() == 0))
+			continue;
+
+		/* Perform a concatenation of bucket data to an output file */
+		file_concatenator fc(_output_file_name, b->get_file_name());
+		fc.start();
+	}
 }
 
 resource_monitor *sort_file::get_resource_monitor() const
@@ -162,3 +183,4 @@ bucket_manager *sort_file::get_bucket_manager() const
 {
 	return _bucket_mgr;
 }
+

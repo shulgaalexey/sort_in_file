@@ -3,12 +3,13 @@
  * This is a class for sorting a file of items
  */
 
+#ifndef _SORT_FILE_H_INCLUDED_
+#define _SORT_FILE_H_INCLUDED_
+
 #include <string>
 #include <vector>
 #include "common.h"
 
-#ifndef _SORT_FILE_H_INCLUDED_
-#define _SORT_FILE_H_INCLUDED_
 
 class bucket;
 class bucket_manager;
@@ -41,13 +42,14 @@ public:
 		  const std::string &output_file_name);
 	virtual ~sort_file();
 public:
-	void start();
-	void pause();
-	void cancel();
+	virtual void start();
+	virtual void pause();
+	virtual void resume();
+	virtual void cancel();
 protected:
-	void read_input_file();
-	void sort_buckets();
-	void concatentate_buckets();
+	virtual void read_input_file();
+	virtual void sort_buckets();
+	virtual void concatentate_buckets();
 protected:
 	resource_monitor *get_resource_monitor() const;
 	bucket_manager *get_bucket_manager() const;
