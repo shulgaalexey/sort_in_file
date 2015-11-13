@@ -15,6 +15,7 @@ Main requirements are following:
 
 The module implements a conception of Bucket Sort, which is defined as following:
 
+###Discussion of a basic sorting approach
 BucketSort(arr[], n)
 * Create n empty buckets
 * For each arr[i] insert arr[i] into corresponding bucket[B(arr[i])],
@@ -23,10 +24,10 @@ BucketSort(arr[], n)
 * Sort buckets individually
 * Concatenate buckets
 
+Note, Counting Sort might be applied as well, but for the realy huge files,
+as believed, the Bucket Sort would be more reliable solution.
 
-
-Detailed task:
-
+###Details of the task
 Sort a binary file of unsigned 32-bit integers in ascending order in the
 assumption that the file size is significantly larger than available memory.
 
@@ -55,9 +56,10 @@ How to build
 -----------
 g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp -lpthread
 
-(use -g for debug in gdb)
+g++/gcc 4.8.1
 
-g++/gcc 4.8.`1
+Note: use -g for debug in gdb
+
 
 
 How to run
@@ -72,15 +74,17 @@ Experiments
 
 Tests demonstrated that multithreaded variant is about 35% faster than a single
 threaded one.
-Test conditions were following:
- * input file item number: 5000000
+\n Test conditions were following:
+ * input file item number: 5 000 000
  * item value range: 0 ... UINT_MAX
  * bucket number: 100
  * maximum number of items in memory: 5000
 
-### Sorting a huge file
-Sorting 500 000 000 items asynchronously with the same conditions
-took 5 min on my machine
+### Performance test
+Sorting a huge file of 500 000 000 items took 5 min on my machine
+ * used asynchronous sorting solution
+ * used the same item range, bucket number and memory restrictions
+ as in previous experiment
 
 
 Reference
