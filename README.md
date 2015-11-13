@@ -8,14 +8,14 @@ Overview
 
 This is a demo implementation of a module, sorting a file of something.
 
-Main requirements are following:
+###Main requirements
 * the file may be small, big or very big
 * the file may contain unsigned integers or something else
 * the sorting may be performed in a single-treaded or multi-threaded mode
 
-The module implements a conception of Bucket Sort, which is defined as following:
 
 ###Discussion of a basic sorting approach
+The module implements a conception of Bucket Sort, which is defined as following:
 BucketSort(arr[], n)
 * Create n empty buckets
 * For each arr[i] insert arr[i] into corresponding bucket[B(arr[i])],
@@ -70,21 +70,24 @@ How to run
 Experiments
 -----------
 
-### Comparison of singlethreaded and multythreaded
+### Comparison of singlethread and multithread performance
 
-Tests demonstrated that multithreaded variant is about 35% faster than a single
-threaded one.
-\n Test conditions were following:
+Tests demonstrated that multithreaded variant is about 35% faster than a
+singlethreaded one.
+Test conditions were following:
  * input file item number: 5 000 000
  * item value range: 0 ... UINT_MAX
  * bucket number: 100
  * maximum number of items in memory: 5000
+ * number of test runs of each sorting solution 20
+ * input files were generated using standard rand() implementation
 
-### Performance test
+### Huge file sorting performance test
 Sorting a huge file of 500 000 000 items took 5 min on my machine
  * used asynchronous sorting solution
  * used the same item range, bucket number and memory restrictions
  as in previous experiment
+ * input file was generated using standard rand() implementation
 
 
 Reference
