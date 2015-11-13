@@ -1,0 +1,2075 @@
+#include <iostream>
+#include <queue>
+using namespace std;
+const int INPUT_SIZE = 20;
+const int BUCKET_K = 10;
+void print(int *input)
+{
+	for ( int i = 0; i < INPUT_SIZE; i++ )
+		cout << input[i] << " ";
+	cout << endl;
+}
+int hash(int n)
+{
+	return n/5;
+	//return (n % BUCKET_K);
+}
+void doinsertionsortforbucket(int* input, int len)
+{
+	while( len-- > 0) {
+		if (input[len] > input[len+1]) {
+			int tmp = input[len];
+			input[len] = input[len+1];
+			input[len+1] = tmp;
+		} else
+			return;
+	}
+}
+void bucketsort(int* input)
+{
+	queue<int> *buckets[BUCKET_K];
+	for ( int i = 0; i < BUCKET_K; i++ )
+		buckets[i] = new queue<int>;
+	// Hash the input and insert the content into appropriate bucket based on hash.
+	for (int i=0;i<INPUT_SIZE;i++)
+	{
+		int hashValue = hash(input[i]);
+		if (hashValue >= BUCKET_K)
+			hashValue = BUCKET_K-1;
+		buckets[hashValue]->push(input[i]);
+	}
+	// extract the content from each of the buckets in order.
+	// using insertion sort
+	int outputidx = 0;
+	for ( int i = 0; i < BUCKET_K; i++ )
+	{
+		if (buckets[i]->size() == 1) {
+			input[outputidx++] = buckets[i]->front();
+			cout << buckets[i]->front() << " | ";
+			buckets[i]->pop();
+		}
+		if (buckets[i]->size() > 1)
+		{
+			while (!buckets[i]->empty())
+			{
+				input[outputidx] = buckets[i]->front();
+				doinsertionsortforbucket(input, outputidx);
+				cout << buckets[i]->front() << " ";
+				buckets[i]->pop();
+				outputidx++;
+			}
+			cout << "| ";
+		}
+	}
+	// clear buckets.
+	for ( int i = 0; i < BUCKET_K; i++ )
+		delete buckets[i];
+}
+int main()
+{
+	int input[INPUT_SIZE] = { 25, 44, 13, 34, 27, 11, 4, 9, 45, 33, 27, 28, 42,
+		6, 49, 31, 37, 23, 14, 41 };
+	cout << "Input: ";
+	print(input);
+	cout << "Bucketed list: " ;
+	bucketsort(input);
+	cout << "\nOutput: ";
+	print(input);
+	return 0;
+}
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * bucket_manager.h
+ */
+
+#ifndef _BUCKET_MANAGER_H_INCLUDED_
+#define _BUCKET_MANAGER_H_INCLUDED_
+
+#include <vector>
+#include "common.h"
+
+class bucket;
+class resource_monitor;
+
+
+class bucket_manager {
+protected:
+	/* TODO: implement bucket_manager */
+	std::vector<bucket *> _buckets;
+
+	/* The number of buckets */
+	size_t _bucket_number;	/* 5, 10, 100 */
+
+	/* The minimal value of the data */
+	DATA_TYPE _val_min;	 /* 0 */
+
+	/* The maximal value of the data */
+	DATA_TYPE _val_max;	/* 30, 5000 */
+
+	/* The range of item values in each bucket */
+	size_t _bucket_range_size; /* (val_max - val_min) / bucket_count; */
+
+	/* Resource Monitor */
+	resource_monitor *_resource_mon;
+
+public:
+	bucket_manager(resource_monitor *mon);
+	virtual ~bucket_manager();
+public:
+	void open_buckets(const std::string &tag);
+	void close_buckets();
+	void fluch_buckets();
+
+public:
+	virtual size_t get_bucket_no(const DATA_TYPE &val);
+
+public:
+	size_t get_bucket_number() const;
+	bucket *get_bucket(size_t bucket_no) const;
+	DATA_TYPE get_val_min() const;
+	DATA_TYPE get_val_max() const;
+	size_t get_bucket_range_size() const;
+
+	void set_bucket_number(size_t bucket_number);
+	void set_val_min(const DATA_TYPE &val_min);
+	void set_val_max(DATA_TYPE &val_max);
+	void set_bucket_range_size(size_t bucket_range_size);
+
+protected:
+	resource_monitor *get_resource_monitor() const;
+};
+
+
+class file_concatenator {
+private:
+	std::string _dst;
+	std::string _src;
+	const size_t _block_size;
+public:
+	file_concatenator(const std::string &dst, const std::string &src);
+	virtual ~file_concatenator();
+public:
+	void start();
+protected:
+	void append_to_dst(char *buf, size_t size);
+};
+
+#endif /* _BUCKET_MANAGER_H_INCLUDED_ */
+
+/**
+ * bucket_manager.h
+ */
+
+#include <iostream>
+#include <climits>
+#include <fstream>
+#include "bucket_manager.h"
+#include "bucket.h"
+
+extern void trace_file(const std::string &file_name);
+
+bucket_manager::bucket_manager(resource_monitor *mon)
+	: _bucket_number(BUCKET_NUMBER)
+	  , _val_min(MIN_VALUE)
+	  , _val_max(MAX_VALUE)
+	  , _bucket_range_size((_val_max - _val_min) / _bucket_number)
+	  , _resource_mon(mon)
+{
+}
+
+bucket_manager::~bucket_manager()
+{
+}
+
+void bucket_manager::open_buckets(const std::string &tag)
+{
+	if(!_buckets.empty())
+		close_buckets();
+
+	_buckets.resize(get_bucket_number(), NULL);
+	for(size_t i = 0; i < _buckets.size(); i ++)
+		_buckets[i] = new bucket(bucket::generate_name(i, tag),
+					 get_resource_monitor(),
+					 this);
+}
+
+void bucket_manager::close_buckets()
+{
+	for(size_t i = 0; i < _buckets.size(); i ++) {
+		bucket *b = _buckets[i];
+		if(b)
+			delete b;
+		_buckets[i] = NULL;
+	}
+}
+
+void bucket_manager::fluch_buckets()
+{
+	for(size_t i = 0; i < _buckets.size(); i ++)
+		if(_buckets[i])
+			_buckets[i]->flush();
+}
+
+size_t bucket_manager::get_bucket_no(const DATA_TYPE &val)
+{
+	return size_t(val / get_bucket_range_size());
+}
+
+bucket *bucket_manager::get_bucket(size_t bucket_no) const
+{
+	if(bucket_no >= _buckets.size()) {
+		std::cout << "ERROR: bucket_no is out of range" << std::endl;
+		return NULL;
+	}
+	return _buckets[bucket_no];
+}
+
+size_t bucket_manager::get_bucket_number() const
+{
+	return _bucket_number;
+}
+
+DATA_TYPE bucket_manager::get_val_min() const
+{
+	return _val_min;
+}
+
+DATA_TYPE bucket_manager::get_val_max() const
+{
+	return _val_max;
+}
+
+size_t bucket_manager::get_bucket_range_size() const
+{
+	return _bucket_range_size;
+}
+
+void bucket_manager::set_bucket_number(size_t bucket_number)
+{
+	_bucket_number = bucket_number;
+	_bucket_range_size = (_val_max - _val_min) / _bucket_number;
+	if(_bucket_range_size < 1)
+		_bucket_range_size = 1;
+}
+
+void bucket_manager::set_val_min(const DATA_TYPE &val_min)
+{
+	_val_min = val_min;
+}
+
+void bucket_manager::set_val_max(DATA_TYPE &val_max)
+{
+	_val_max = val_max;
+}
+
+void bucket_manager::set_bucket_range_size(size_t bucket_range_size)
+{
+	_bucket_range_size = bucket_range_size;
+}
+
+resource_monitor *bucket_manager::get_resource_monitor() const
+{
+	return _resource_mon;
+}
+
+
+file_concatenator::file_concatenator(const std::string &dst,
+				     const std::string &src)
+	: _dst(dst)
+	  , _src(src)
+	  , _block_size(MAX_ITEM_COUNT_IN_MEMORY_ALLOWED)
+{
+}
+
+file_concatenator::~file_concatenator()
+{
+}
+
+void file_concatenator::start()
+{
+	std::ifstream b;
+	b.open(_src.c_str(), std::ios::in | std::ios::binary);
+	if(!b.is_open()) {
+		std::cout << "ERROR Opening File: " << _src << std::endl;
+		return;
+	}
+	if(b) {
+		char *buffer = new char [_block_size];
+		while(b) {
+			b.read(buffer, _block_size);
+
+			if(b)
+				append_to_dst(buffer, _block_size);
+
+			else {
+				append_to_dst(buffer, b.gcount());
+				break;
+			}
+		}
+		delete [] buffer;
+		b.close();
+	}
+}
+
+void file_concatenator::append_to_dst(char *buffer, size_t size)
+{
+	if(!buffer || (size == 0))
+		return;
+
+	std::ofstream r;
+	r.open(_dst.c_str(), std::ios::out | std::ios::binary | std::ios::app);
+	if(!r.is_open()) {
+		std::cout << "ERROR Opening File: " << _dst << std::endl;
+		return;
+	}
+
+	r.write(buffer, size);
+	r.close();
+}
+
+
+
+/**
+ * bucket.cpp
+ */
+#include <iostream>
+#include <stdio.h>
+#include <algorithm>
+
+// For formating bucket names
+#include <sstream>
+
+#include "bucket.h"
+#include "resource_monitor.h"
+#include "bucket_manager.h"
+
+// For secondary sorting of a bucket file
+#include "sort_file.h"
+
+extern void trace_file(const std::string &file_name);
+bool is_file_sorted(const std::string &file_name);
+
+bucket::bucket(const std::string &file_name,
+	       resource_monitor *mon,
+	       bucket_manager *mgr)
+	: _file_name(file_name)
+	  , _resource_mon(mon)
+	  , _bucket_mgr(mgr)
+{
+	/* Clear the bucket file if exists */
+	remove(_file_name.c_str());
+
+	/* Register the bucket in the resource monitor */
+	get_resource_monitor()->register_bucket(this);
+}
+
+bucket::~bucket()
+{
+	/* Clear the bucket file if exists */
+	remove(_file_name.c_str());
+
+	get_resource_monitor()->unregister_bucket(this);
+}
+
+std::string bucket::generate_name(const size_t bucket_no,
+				  const std::string &tag)
+{
+	std::stringstream ss;
+	ss << "bucket_" << tag << "_" << bucket_no << ".dat";
+	return ss.str();
+}
+
+std::string bucket::get_file_name() const
+{
+	return _file_name;
+}
+
+void bucket::add(const DATA_TYPE &item)
+{
+	_cache.push_back(item);
+	/* Notify the global resource monitor, that one more item was added */
+	get_resource_monitor()->items_added(1);
+}
+
+size_t bucket::get_bucket_file_length() const
+{
+	std::fstream f;
+	f.open(_file_name.c_str(),
+	       std::ios::in | std::ios::out | std::ios::binary);
+	if(!f.is_open()) {
+		/*std::cout << "ERROR Opening File: " << _file_name
+			<< std::endl;*/
+		return 0;
+	}
+	if(f) {
+		/* get length of file */
+		f.seekg (0, f.end);
+		const int length = f.tellg() / sizeof(int);
+		f.seekg (0, f.beg);
+		f.close();
+		return length;
+	}
+	return 0;
+}
+
+void bucket::sort()
+{
+	/* Check the length of bucket file in order to decide if we can sort in
+	*  in memory or should run the sort_file algorithm over the bucket file
+	*/
+	const size_t bucket_file_length = get_bucket_file_length();
+	if(bucket_file_length == 0)
+		return; /* the bucket is empty, nothing to sort */
+	if(get_resource_monitor()->enough_memory_for(bucket_file_length))
+		sort_in_memory();
+	else
+		sort_in_file();
+}
+
+void bucket::sort_in_file()
+{
+	/*
+	 * Optimization: check if the bucket file is sorted already.
+	 * it is possible, because the value range of items in the bucket is
+	 * limited and all items may be the same.
+	 */
+	if(is_file_sorted(_file_name))
+		return;
+
+	sort_file s(_file_name, _file_name);
+
+	const size_t cur_bucket_number =
+		get_bucket_manager()->get_bucket_number();
+	s.get_bucket_manager()->set_bucket_number(cur_bucket_number * 2);
+	s.start();
+}
+
+void bucket::sort_in_memory()
+{
+	std::fstream f;
+	f.open(_file_name.c_str(),
+	       std::ios::in | std::ios::out | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << _file_name
+			<< std::endl;
+		return;
+	}
+	if(f) {
+		/* get length of file */
+		f.seekg (0, f.end);
+		const int length = f.tellg() / sizeof(int);
+		f.seekg (0, f.beg);
+
+		/* If the length of the file is too long,
+		 * then run the sort_file algorithm once again
+		 * Othervise, read the file into memory and sort using standerd
+		 * tools.
+		 */
+
+		if(length > 0) {
+
+			get_resource_monitor()->use_memory(length);
+
+			/* TODO: read whole buffer instead of reading items
+			 *  on-by-one
+			 */
+
+			/* Read the bucket into memory */
+			std::vector<int> bucket_data(length, 0);
+			DATA_TYPE val = 0;
+			for(int i = 0; i < length; i ++) {
+				f.read((char *)(&val), sizeof(val));
+				bucket_data[i] = val;
+			}
+
+			/* Sort the bucket */
+			std::sort(bucket_data.begin(), bucket_data.end());
+
+			/* Write the bucket back into file */
+			f.seekg (0, f.beg);
+			for(size_t i = 0; i<bucket_data.size(); i ++) {
+				val = bucket_data[i];
+				f.write((char *)(&val), sizeof(val));
+			}
+
+
+			get_resource_monitor()->release_memory(length);
+		}
+		f.close();
+	}
+}
+
+void bucket::read(char **buffer, size_t *length)
+{
+	const size_t bucket_file_length = get_bucket_file_length();
+	if(bucket_file_length == 0)
+		return;
+
+	std::ifstream b;
+	b.open(_file_name.c_str(), std::ios::in | std::ios::binary);
+	if(!b.is_open()) {
+		std::cout << "ERROR Opening File: " << _file_name
+			<< std::endl;
+		return;
+	}
+	if(b) {
+		b.seekg(0, b.end);
+		*length = b.tellg();
+		b.seekg(0, b.beg);
+		*buffer = new char [*length];
+		b.read(*buffer, *length);
+		b.close();
+	}
+}
+
+void bucket::trace(const std::string &message)
+{
+	const size_t bucket_file_length = get_bucket_file_length();
+	if(bucket_file_length == 0)
+		return;
+
+	trace_file(_file_name);
+}
+
+void bucket::flush()
+{
+	if(_cache.empty())
+		return; /* The bucket is not needed to be flushed */
+
+	std::fstream f;
+	f.open(_file_name.c_str(),
+	       std::ios::out | std::ios::binary | std::ios::app);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << _file_name << std::endl;
+		return;
+	}
+	if(f) {
+		//f.seekg (0, f.end);
+
+		for(size_t i = 0; i < _cache.size(); i ++) {
+			DATA_TYPE val = _cache[i];
+			f.write((char *)(&val), sizeof(val));
+		}
+		f.close();
+	}
+
+	/* Notify the global resource monitor, that one more item was added */
+	get_resource_monitor()->items_released(_cache.size());
+
+	/* Clear the cache */
+	_cache.clear();
+}
+
+resource_monitor *bucket::get_resource_monitor() const
+{
+	return _resource_mon;
+}
+
+
+bucket_manager *bucket::get_bucket_manager() const
+{
+	return _bucket_mgr;
+}
+
+
+/*
+ * bucket.h
+ */
+
+#ifndef _BUCKET_H_INCLUDED_
+#define _BUCKET_H_INCLUDED_
+
+#include <fstream>
+#include <vector>
+#include "common.h"
+
+class resource_monitor;
+class bucket_manager;
+
+class bucket {
+private:
+	std::string _file_name;
+	std::vector<DATA_TYPE> _cache;
+	resource_monitor *_resource_mon;
+	bucket_manager *_bucket_mgr;
+public:
+	bucket(const std::string &file_name,
+	       resource_monitor *mon,
+	       bucket_manager *mgr);
+	virtual ~bucket();
+private:
+	bucket() {}
+	bucket(const bucket &src);
+public:
+	void add(const DATA_TYPE &item);
+	void sort();
+	void flush();
+	std::string get_file_name() const;
+	size_t get_bucket_file_length() const;
+
+	/* TODO: delete because not used */
+	void read(char **buffer, size_t *length);
+
+	/* Read the whole contents of the bucket
+	* (it is convenient for concatenation)
+	 */
+	void trace(const std::string &message);
+public:
+	static std::string generate_name(const size_t bucket_no,
+					 const std::string &tag);
+protected:
+	resource_monitor *get_resource_monitor() const;
+	bucket_manager *get_bucket_manager() const;
+protected:
+	void sort_in_memory();
+	void sort_in_file();
+
+	friend class sort_file_async; /* TODO: remove in release */
+};
+
+
+/* TODO: implement empty_bucket */
+
+
+#endif /* _BUCKET_H_INCLUDED_ */
+
+/**
+ * common.h
+ */
+#ifndef _COMMON_H_INCLUDED_
+#define _COMMON_H_INCLUDED_
+
+#include <climits>
+
+/* Data type of items, stored in files, which is to sorted */
+typedef unsigned int DATA_TYPE;
+
+/* The size of the input file */
+const size_t INPUT_SIZE =
+	//25;
+	//100;
+	//200;
+	//2000;
+	//50 * 1000;
+	//500 * 1000;
+	5 * 1000 * 1000;
+	//50 * 1000 * 1000;
+	//500 * 1000 * 1000;
+
+/* The maximum number of items, which may be sotred in the memory */
+const size_t MAX_ITEM_COUNT_IN_MEMORY_ALLOWED =
+	//10;
+	//50;
+	//100;
+	//1000;
+	5000;
+
+/* The number of buckets to use while sorting */
+const size_t BUCKET_NUMBER =
+	//5;
+	//10;
+	100;
+
+const DATA_TYPE MIN_VALUE = 0;
+const DATA_TYPE MAX_VALUE =
+	//30;
+	//100;
+	//1000;
+	UINT_MAX;
+
+const size_t TEST_NUMBER =
+	//1;
+	//2;
+	//5;
+	20;
+
+const bool __debug_trace =
+	//true;
+	false;
+
+
+
+#endif /* _COMMON_H_INCLUDED_ */
+
+/**
+ * job_manager.cpp
+ */
+
+#include <iostream>
+#include <unistd.h>
+#include <sys/time.h>
+#include <errno.h>
+#include "job_manager.h"
+#include "bucket.h"
+
+
+/*----------------------------------------------------------------------------*/
+
+job::job()
+{
+}
+
+job::~job()
+{
+}
+
+/*----------------------------------------------------------------------------*/
+
+sort_bucket_job::sort_bucket_job(class bucket *b)
+	: _b(b)
+{
+}
+
+sort_bucket_job::~sort_bucket_job()
+{
+}
+
+void sort_bucket_job::run()
+{
+	/* Sort the bucket */
+	if(_b)
+		_b->sort();
+}
+
+/*----------------------------------------------------------------------------*/
+
+pthread_mutex_t __wrx_mutex = PTHREAD_MUTEX_INITIALIZER;
+static volatile bool __working = true; /* TODO: it must be a member variable */
+
+pthread_cond_t __job_cond  = PTHREAD_COND_INITIALIZER;
+//pthread_mutex_t __job_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+worker_manager::worker_manager()
+	: _ref_cnt(0)
+	  , _worker_number(3)
+	  , _wait_for_job_ms(100)
+{
+	/* Use it if we want to have workers awailable always */
+	start(); /* I beleive it is a good idea, but tests show opposite */
+}
+
+worker_manager::~worker_manager()
+{
+	stop();
+}
+
+worker_manager *worker_manager::get_manager()
+{
+	static worker_manager mgr;
+	return &mgr;
+}
+
+void worker_manager::start()
+{
+	pthread_mutex_lock(&__wrx_mutex);
+	const int cur_ref_cnt = _ref_cnt;
+	_ref_cnt ++;
+	pthread_mutex_unlock(&__wrx_mutex);
+
+	/* Start threads, if needed */
+	if(cur_ref_cnt == 0) {
+
+		/* Notify all threads, that it is time to start working */
+		pthread_mutex_lock(&__wrx_mutex);
+		__working = true;
+		pthread_mutex_unlock(&__wrx_mutex);
+
+		for(size_t i = 0; i < _worker_number; i ++) {
+			pthread_t _thread = 0;
+			int ret = pthread_create(&_thread,
+						 NULL,
+						 _worker_thread,
+						 this);
+			if(ret) {
+				std::cout << "ERROR! pthread_create() return code: "
+					<<  ret << std::endl;
+				break;
+			}
+		}
+	}
+}
+
+void worker_manager::stop()
+{
+	pthread_mutex_lock(&__wrx_mutex);
+	_ref_cnt --;
+	const int cur_ref_cnt = _ref_cnt;
+	pthread_mutex_unlock(&__wrx_mutex);
+
+	/* Release threads, if needed */
+	if(cur_ref_cnt == 0) {
+		/* Notify all threads, that it is time to stop */
+		pthread_mutex_lock(&__wrx_mutex);
+		__working = false;
+		pthread_mutex_unlock(&__wrx_mutex);
+
+		/* Wait for threads finish */
+		for(std::map<pthread_t, int>::iterator it = _workers.begin();
+		    it != _workers.end(); ++it)
+			pthread_join(it->first, NULL);
+	}
+
+	/* Correcting ref count in case of wrong multiple decrement */
+	pthread_mutex_lock(&__wrx_mutex);
+	if(_ref_cnt < 0)
+		_ref_cnt = 0;
+	pthread_mutex_unlock(&__wrx_mutex);
+}
+
+void worker_manager::register_job_manager(class job_manager *mgr)
+{
+	_job_managers[mgr] = 1;
+}
+
+void worker_manager::unregister_job_manager(class job_manager *mgr)
+{
+	_job_managers[mgr] = 0;
+}
+
+void *worker_manager::_worker_thread(void *arg)
+{
+	worker_manager *wm = (worker_manager *)arg;
+	if(!arg)
+		return NULL;
+
+	const pthread_t my_id = pthread_self();
+	wm->on_worker_free(my_id);
+
+	while(true) {
+		/* Check if we should work now */
+		pthread_mutex_lock(&__wrx_mutex);
+		const bool working = __working;
+		pthread_mutex_unlock(&__wrx_mutex);
+
+		if(!working)
+			break;
+
+#if 0
+		/* Wait for a job */
+		bool must_work = false;
+		pthread_mutex_lock(&__job_mutex);
+
+		struct timeval tv;
+		struct timespec ts;
+
+		gettimeofday(&tv, NULL);
+		ts.tv_sec = time(NULL) + wm->_wait_for_job_ms / 1000;
+		ts.tv_nsec = tv.tv_usec * 1000 + 1000 * 1000
+			* (wm->_wait_for_job_ms % 1000);
+		ts.tv_sec += ts.tv_nsec / (1000 * 1000 * 1000);
+		ts.tv_nsec %= (1000 * 1000 * 1000);
+
+		/* Attempt to realise whether must work */
+		int rt = pthread_cond_timedwait(&__job_cond,
+						&__job_mutex,
+						&ts);
+		if(rt == 0)
+			must_work = true;
+		else if(rt == ETIMEDOUT) {
+			//std::cout << "keep waiting for __job_cond" << std::endl;
+		} else
+			std::cout << "ERROR of timedwait" <<std::endl;
+
+		pthread_mutex_unlock(&__job_mutex);
+#endif
+
+		bool must_work = true;
+		if(must_work) {
+			/* Let the manager know that I am busy */
+			wm->on_worker_busy(my_id);
+
+
+			/* Extract the current job */
+			job *j = NULL;
+			job_manager *mgr = NULL;
+			for(std::map<job_manager *, int>::iterator it =
+			    wm->_job_managers.begin();
+			    it != wm->_job_managers.end(); ++it) {
+				if(it->second != 1)
+					continue;
+
+				mgr = it->first;
+				if(!mgr)
+					continue;
+
+				j = mgr->pop_job();
+				break;
+			}
+
+
+			/* Perform the job */
+			if(j && mgr) {
+				j->run();
+				mgr->finish_job(j);
+				delete j;
+			} else {
+				/* We are done */
+
+				/* Let the manager know that I am free */
+				wm->on_worker_free(my_id);
+			}
+
+			/* Let the manager know that I am free */
+			wm->on_worker_free(my_id);
+		}
+	}
+
+	return NULL;
+}
+
+void worker_manager::on_worker_busy(pthread_t worker_id)
+{
+	_workers[worker_id] = 2;
+}
+
+void worker_manager::on_worker_free(pthread_t worker_id)
+{
+	_workers[worker_id] = 1;
+}
+
+void worker_manager::on_new_job()
+{
+#if 0
+	/* Mark that new Job is available */
+	pthread_mutex_lock(&__job_mutex);
+	pthread_cond_signal(&__job_cond);
+	pthread_mutex_unlock(&__job_mutex);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+
+job_manager::job_manager()
+{
+	worker_manager::get_manager()->register_job_manager(this);
+}
+
+job_manager::~job_manager()
+{
+	worker_manager::get_manager()->unregister_job_manager(this);
+
+	{
+		scope_mutex sm(_jobs_queue_mutex);
+		while(!_jobs.empty()) {
+			job *j = _jobs.front();
+			_jobs.pop();
+			if(j)
+				delete j;
+		}
+
+		while(!_paused_jobs.empty()) {
+			job *j = _paused_jobs.front();
+			_paused_jobs.pop();
+			if(j)
+				delete j;
+		}
+	}
+}
+
+void job_manager::add(job *j)
+{
+	if(!j)
+		return;
+
+	{
+		scope_mutex sm(_jobs_queue_mutex);
+		/* Add the Job to the Queue */
+		_jobs.push(j);
+	}
+
+	/* Notify the Worker Manager, that the new Job is available */
+	worker_manager::get_manager()->on_new_job();
+}
+
+void job_manager::start()
+{
+	worker_manager::get_manager()->start();
+
+	usleep(0 * 1000);
+}
+
+void job_manager::stop()
+{
+	usleep(0 * 1000);
+
+	while(true) {
+		const size_t jobs_number = jobs_waiting();
+		if(jobs_number <= 0) {
+			break;
+		}
+		usleep(100 * 1000);
+	}
+
+	usleep(0 * 1000);
+
+	/* Release all jobs from the queue */
+	worker_manager::get_manager()->stop();
+}
+
+void job_manager::pause()
+{
+	scope_mutex sm(_jobs_queue_mutex);
+	/* Save all jobs in the pause-queue */
+	while(!_jobs.empty()) {
+		job *j = _jobs.front();
+		_jobs.pop();
+		if(j)
+			_paused_jobs.push(j);
+	}
+}
+
+void job_manager::resume()
+{
+	scope_mutex sm(_jobs_queue_mutex);
+	/* Resume all paused jobs */
+	while(!_paused_jobs.empty()) {
+		job *j = _paused_jobs.front();
+		_paused_jobs.pop();
+		if(j)
+			_jobs.push(j);
+	}
+}
+
+job *job_manager::pop_job()
+{
+	scope_mutex sm(_jobs_queue_mutex);
+
+	if(_jobs.empty()) {
+		return NULL;
+	}
+
+	/* Return the first job in the queue */
+	job *j = _jobs.front();
+	_jobs.pop();
+
+	start_job(j);
+
+	/* Check if we finished the whole work */
+	//const bool finished = _jobs.empty();
+
+	return j;
+}
+
+void job_manager::start_job(job *j)
+{
+	if(!j)
+		return;
+
+	scope_mutex sm(_running_jobs_mutex);
+	_running_jobs[j] = 1;
+}
+
+void job_manager::finish_job(job *j)
+{
+	if(!j)
+		return;
+
+	scope_mutex sm(_running_jobs_mutex);
+	_running_jobs.erase(j);
+}
+
+size_t job_manager::jobs_waiting()
+{
+	scope_mutex sm(_running_jobs_mutex);
+	const size_t number = _running_jobs.size();
+	return number;
+}
+
+/**
+ * job_manager.h
+ */
+
+#ifndef _JOB_MANAGER_H_INCLUDED_
+#define _JOB_MANAGER_H_INCLUDED_
+
+#include <queue>
+#include <map>
+#include <stdlib.h>
+#include "scope_mutex.h"
+
+/*----------------------------------------------------------------------------*/
+
+class job {
+public:
+	job();
+	virtual ~job();
+public:
+	virtual void run() = 0;
+};
+
+/*----------------------------------------------------------------------------*/
+
+class sort_bucket_job : public job {
+private:
+	class bucket *_b;
+public:
+	sort_bucket_job(class bucket *b);
+	virtual ~sort_bucket_job();
+public:
+	virtual void run();
+};
+
+/*----------------------------------------------------------------------------*/
+
+class worker_manager {
+	std::map<class job_manager *, int> _job_managers;
+	std::map<pthread_t, int> _workers;
+	volatile int _ref_cnt;
+	const size_t _worker_number;
+	const unsigned int _wait_for_job_ms;
+public:
+	worker_manager();
+	virtual ~worker_manager();
+public:
+	static worker_manager *get_manager();
+public:
+	void start();
+	void stop();
+	void on_new_job();
+public:
+	void register_job_manager(class job_manager *mgr);
+	void unregister_job_manager(class job_manager *mgr);
+protected:
+	void on_worker_free(pthread_t id);
+	void on_worker_busy(pthread_t id);
+protected:
+	static void *_worker_thread(void *arg);
+};
+
+/*----------------------------------------------------------------------------*/
+
+class job_manager {
+	std::queue<job *> _jobs;
+	std::queue<job *> _paused_jobs;
+	std::map<job *, int> _running_jobs;
+
+	mutex_object _jobs_queue_mutex;
+	mutex_object _running_jobs_mutex;
+public:
+	job_manager();
+	virtual ~job_manager();
+public:
+	void add(job *j);
+	void start();
+	void stop();
+	void pause();
+	void resume();
+public:
+	job *pop_job();
+public:
+	void start_job(job *j);
+	void finish_job(job *j);
+	size_t jobs_waiting();
+};
+
+#endif /* _JOB_MANAGER_H_INCLUDED_ */
+
+# sort_in_file
+
+Sorting in the File
+===================
+
+Overview
+--------
+
+This is a demo implementation of a module, sorting a file of something.
+
+Main requirements are following:
+* the file may be small, big or very big
+* the file may contain unsigned integers or something else
+* the sorting may be performed in a single-treaded or multi-threaded mode
+
+The module implements a conception of Bucket Sort, which is defined as following:
+
+BucketSort(arr[], n)
+* Create n empty buckets
+* For each arr[i] insert arr[i] into corresponding bucket[B(arr[i])],
+  where B is function to detect the index of the bucket
+  in which to put the item
+* Sort buckets individually
+* Concatenate buckets
+
+
+
+Detailed task:
+
+Sort a binary file of unsigned 32-bit integers in ascending order in the
+assumption that the file size is significantly larger than available memory.
+
+Expected result
+C++ source code with a project or a make file of a console application,
+that is built with VS 2010/2013 or gcc(g++) 4.6/4.8
+The application may assume the execution on a semi-idle multi-core
+64bit OS with plenty of HD space.
+
+
+Workflow
+--------
+
+General data flow is as following
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/data_flow.png" alt="Data Flow" style="width:500px"/>
+
+Data flow in multithreaded environment is following
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/multithread_data_flow.png" alt="Multithread Data Flow" style="width:500px"/>
+
+
+In theory it might be developed as a uniform framework for both single thread and multi thread environments
+<img src="https://github.com/shulgaalexey/sort_in_file/blob/master/doc/sort_conceptual_workflow.png" alt="Sort Conceptual Workflow" style="width:500px"/>
+
+
+How to build
+-----------
+g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp -lpthread
+
+(use -g for debug in gdb)
+
+g++/gcc 4.8.`1
+
+
+How to run
+----------
+./test
+
+
+Experiments
+-----------
+
+### Comparison of singlethreaded and multythreaded
+
+Tests demonstrated that multithreaded variant is about 35% faster than a single
+threaded one.
+Test conditions were following:
+ * input file item number: 5000000
+ * item value range: 0 ... UINT_MAX
+ * bucket number: 100
+ * maximum number of items in memory: 5000
+
+### Sorting a huge file
+Sorting 500 000 000 items asynchronously with the same conditions
+took 5 min on my machine
+
+
+Reference
+---------
+Bucket Sort algorithm
+
+
+TODO
+----
+* more tests (small imput, huge imput, input consisting a number of single value, etc.)
+* code coverage
+* bucket concatenation segment-by-segments, not a whole bucket file
+* multithreading
+
+/**
+ * resource_monitor.cpp
+ */
+#include "resource_monitor.h"
+#include "bucket.h"
+
+
+resource_monitor::resource_monitor()
+	: _cur_items_in_memory(0)
+{
+}
+
+resource_monitor::~resource_monitor()
+{
+}
+
+/*resource_monitor *resource_monitor::get_ptr()
+{
+	static resource_monitor mon;
+	return &mon;
+}*/
+
+void resource_monitor::register_bucket(bucket *b)
+{
+	_buckets[b] = 1;
+}
+
+void resource_monitor::unregister_bucket(bucket *b)
+{
+	_buckets[b] = 0;
+}
+
+void resource_monitor::items_added(size_t cnt)
+{
+	_cur_items_in_memory += cnt;
+	if(_cur_items_in_memory > MAX_ITEM_COUNT_IN_MEMORY_ALLOWED)
+		flush_buckets();
+}
+
+void resource_monitor::items_released(size_t cnt)
+{
+	if(_cur_items_in_memory <= cnt)
+		_cur_items_in_memory = 0;
+	else
+		_cur_items_in_memory -= cnt;
+
+}
+
+void resource_monitor::flush_buckets()
+{
+	for(std::map<bucket *, int>::iterator it = _buckets.begin();
+			it != _buckets.end(); ++it) {
+		bucket *b = it->first;
+		if(b && (it->second == 1))
+			b->flush();
+	}
+}
+
+bool resource_monitor::enough_memory_for(size_t cnt)
+{
+	return true;
+	return ((_cur_items_in_memory + cnt)
+		<= MAX_ITEM_COUNT_IN_MEMORY_ALLOWED);
+}
+
+void resource_monitor::use_memory(size_t cnt)
+{
+		_cur_items_in_memory += cnt;
+}
+
+void resource_monitor::release_memory(size_t cnt)
+{
+	if(_cur_items_in_memory <= cnt)
+		_cur_items_in_memory = 0;
+	else
+		_cur_items_in_memory -= cnt;
+}
+
+/**
+ * resource_monitor.h
+ */
+#ifndef _RESOURCE_MONITOR_H_INCLUDED_
+#define _RESOURCE_MONITOR_H_INCLUDED_
+
+#include <iostream>
+#include <map>
+
+
+class bucket;
+
+class resource_monitor {
+	private:
+		std::map<bucket *, int> _buckets;
+		size_t _cur_items_in_memory;
+
+	public:
+		resource_monitor();
+		virtual ~resource_monitor();
+		/* The singletone is nice, but it conflicts with the conception
+		 * of cascading file sort when each bucket file can be sorted
+		 * with sort_file algorithm
+		 */
+	/*public:
+		static resource_monitor *get_ptr();*/
+	public:
+		void register_bucket(bucket *b);
+		void unregister_bucket(bucket *b);
+		void items_added(size_t cnt);
+		void items_released(size_t cnt);
+		void use_memory(size_t cnt);
+		void release_memory(size_t cnt);
+		bool enough_memory_for(size_t cnt);
+	protected:
+		void flush_buckets();
+};
+
+#endif /* _RESOURCE_MONITOR_H_INCLUDED_ */
+
+/**
+ * sort_file.h
+ * This is a class for sorting a file of items
+ */
+
+#ifndef _SORT_FILE_H_INCLUDED_
+#define _SORT_FILE_H_INCLUDED_
+
+#include <string>
+#include <vector>
+#include "common.h"
+
+
+class bucket;
+class bucket_manager;
+class resource_monitor;
+
+
+class sort_file {
+protected:
+	/* Input file name */
+	std::string _input_file_name;
+	std::string _output_file_name;
+
+	/* System resource monitor */
+	resource_monitor *_resource_mon;
+
+	/* Bucket manager */
+	bucket_manager *_bucket_mgr;
+
+	/* Unique string tag
+	 * (it is needed for multi-level "cascade" sorting
+	 * of huge files in the environment with small memory
+	 */
+	std::string _tag;
+
+	/* Foe simplicity, the tag is a number of the instance */
+	static unsigned int _id;
+
+public:
+	sort_file(const std::string &input_file_name,
+		  const std::string &output_file_name);
+	virtual ~sort_file();
+public:
+	virtual void start();
+	virtual void pause();
+	virtual void resume();
+	virtual void cancel();
+protected:
+	virtual void read_input_file();
+	virtual void sort_buckets();
+	virtual void concatentate_buckets();
+protected:
+	resource_monitor *get_resource_monitor() const;
+	bucket_manager *get_bucket_manager() const;
+
+	friend class bucket;
+};
+
+#endif /* _SORT_FILE_H_INCLUDED_ */
+
+/**
+ * sort_file.h
+ * This is a class for sorting a file of items
+ */
+
+#ifndef _SORT_FILE_H_INCLUDED_
+#define _SORT_FILE_H_INCLUDED_
+
+#include <string>
+#include <vector>
+#include "common.h"
+
+
+class bucket;
+class bucket_manager;
+class resource_monitor;
+
+
+class sort_file {
+protected:
+	/* Input file name */
+	std::string _input_file_name;
+	std::string _output_file_name;
+
+	/* System resource monitor */
+	resource_monitor *_resource_mon;
+
+	/* Bucket manager */
+	bucket_manager *_bucket_mgr;
+
+	/* Unique string tag
+	 * (it is needed for multi-level "cascade" sorting
+	 * of huge files in the environment with small memory
+	 */
+	std::string _tag;
+
+	/* Foe simplicity, the tag is a number of the instance */
+	static unsigned int _id;
+
+public:
+	sort_file(const std::string &input_file_name,
+		  const std::string &output_file_name);
+	virtual ~sort_file();
+public:
+	virtual void start();
+	virtual void pause();
+	virtual void resume();
+	virtual void cancel();
+protected:
+	virtual void read_input_file();
+	virtual void sort_buckets();
+	virtual void concatentate_buckets();
+protected:
+	resource_monitor *get_resource_monitor() const;
+	bucket_manager *get_bucket_manager() const;
+
+	friend class bucket;
+};
+
+#endif /* _SORT_FILE_H_INCLUDED_ */
+
+/**
+ * sort_file.cpp
+ */
+
+#include "sort_file.h"
+#include "bucket.h"
+#include "resource_monitor.h"
+#include "bucket_manager.h"
+
+// For formating bucket names
+#include <sstream>
+
+extern void trace_file(const std::string &file_name);
+
+unsigned int sort_file::_id = 1;
+
+sort_file::sort_file(const std::string &input_file_name,
+		     const std::string &output_file_name)
+	: _input_file_name(input_file_name)
+	  , _output_file_name(output_file_name)
+	  , _resource_mon(NULL)
+	  , _bucket_mgr(NULL)
+{
+	/* Generate unique tag */
+	std::stringstream ss;
+	ss << _id;
+	sort_file::_id ++;
+	_tag = ss.str();
+
+	/* Create a resource monitor for this instance of sorting algorithm */
+	_resource_mon = new resource_monitor();
+
+	/* Create a bucket manager */
+	_bucket_mgr = new bucket_manager(_resource_mon);
+}
+
+sort_file::~sort_file()
+{
+	/* Release all buckets */
+	if(_bucket_mgr) {
+		_bucket_mgr->close_buckets();
+		delete _bucket_mgr;
+	}
+	_bucket_mgr = NULL;
+
+
+	/* Destroy the resource monitor */
+	if(_resource_mon)
+		delete _resource_mon;
+	_resource_mon = NULL;
+}
+
+void sort_file::start()
+{
+	if(__debug_trace)
+		trace_file(_input_file_name);
+
+	/* 1. Prepare buckets for sorting */
+	get_bucket_manager()->open_buckets(_tag);
+
+	/* 2. Read input file and distribute values among buckets */
+	read_input_file();
+
+	/* 2.1 Fix bucket contents */
+	get_bucket_manager()->fluch_buckets();
+
+	if(__debug_trace)
+		for(size_t i = 0;
+		    i < get_bucket_manager()->get_bucket_number(); i ++)
+			trace_file(bucket::generate_name(i, _tag));
+
+	/* 3. Sort buckets individually */
+	sort_buckets();
+
+	if(__debug_trace)
+		for(size_t i = 0;
+		    i < get_bucket_manager()->get_bucket_number(); i ++)
+			trace_file(bucket::generate_name(i, _tag));
+
+	/* 4. Concatenate all buckets into an output */
+	concatentate_buckets();
+
+	/* 5. Close all buckets */
+	get_bucket_manager()->close_buckets();
+
+	if(__debug_trace)
+		trace_file(_output_file_name);
+
+}
+
+void sort_file::pause()
+{
+	/* TODO: */
+}
+
+void sort_file::resume()
+{
+	/* TODO: */
+}
+
+void sort_file::cancel()
+{
+	/* TODO: */
+}
+
+void sort_file::read_input_file()
+{
+	std::ifstream f;
+	f.open(_input_file_name.c_str(), std::ios::in | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << _input_file_name
+			<< std::endl;
+		return;
+	}
+	f.seekg (0, f.beg);
+	DATA_TYPE val = 0;
+	while(true) {
+		f.read((char *)(&val), sizeof(val));
+		if(f.eof())
+			break;
+		const size_t bucket_no = get_bucket_manager()->get_bucket_no(val);
+		bucket *b = get_bucket_manager()->get_bucket(bucket_no);
+		if(b)
+			b->add(val);
+	}
+	f.close();
+}
+
+void sort_file::sort_buckets()
+{
+	for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++) {
+		bucket *b = get_bucket_manager()->get_bucket(i);
+		if(b)
+			b->sort();
+	}
+}
+
+void sort_file::concatentate_buckets()
+{
+	/*std::ofstream r;
+	r.open(_output_file_name.c_str(), std::ios::out | std::ios::binary);
+	if(!r.is_open()) {
+		std::cout << "ERROR Opening File: " << _output_file_name
+			<< std::endl;
+		return;
+	}
+	for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++) {
+		bucket *b = get_bucket_manager()->get_bucket(i);
+		if(!b)
+			continue;
+
+		char *buffer = NULL;
+		size_t length = 0;
+		b->read(&buffer, &length);
+		if(!buffer)
+			continue;
+		r.write(buffer, length);
+		delete [] buffer;
+	}
+	r.close();*/
+
+
+	/* Remove the output file if it exists */
+	remove(_output_file_name.c_str());
+
+	for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++) {
+		bucket *b = get_bucket_manager()->get_bucket(i);
+		if(!b || (b->get_bucket_file_length() == 0))
+			continue;
+
+		/* Perform a concatenation of bucket data to an output file */
+		file_concatenator fc(_output_file_name, b->get_file_name());
+		fc.start();
+	}
+}
+
+resource_monitor *sort_file::get_resource_monitor() const
+{
+	return _resource_mon;
+}
+
+bucket_manager *sort_file::get_bucket_manager() const
+{
+	return _bucket_mgr;
+}
+
+/**
+ * sort_file.h
+ * This is a class for sorting a file of items
+ */
+
+#ifndef _SORT_FILE_H_INCLUDED_
+#define _SORT_FILE_H_INCLUDED_
+
+#include <string>
+#include <vector>
+#include "common.h"
+
+
+class bucket;
+class bucket_manager;
+class resource_monitor;
+
+
+class sort_file {
+protected:
+	/* Input file name */
+	std::string _input_file_name;
+	std::string _output_file_name;
+
+	/* System resource monitor */
+	resource_monitor *_resource_mon;
+
+	/* Bucket manager */
+	bucket_manager *_bucket_mgr;
+
+	/* Unique string tag
+	 * (it is needed for multi-level "cascade" sorting
+	 * of huge files in the environment with small memory
+	 */
+	std::string _tag;
+
+	/* Foe simplicity, the tag is a number of the instance */
+	static unsigned int _id;
+
+public:
+	sort_file(const std::string &input_file_name,
+		  const std::string &output_file_name);
+	virtual ~sort_file();
+public:
+	virtual void start();
+	virtual void pause();
+	virtual void resume();
+	virtual void cancel();
+protected:
+	virtual void read_input_file();
+	virtual void sort_buckets();
+	virtual void concatentate_buckets();
+protected:
+	resource_monitor *get_resource_monitor() const;
+	bucket_manager *get_bucket_manager() const;
+
+	friend class bucket;
+};
+
+#endif /* _SORT_FILE_H_INCLUDED_ */
+
+/**
+ * sort_file_async.cpp
+ */
+
+#include <iostream>
+#include "sort_file_async.h"
+#include "bucket.h"
+#include "bucket_manager.h"
+#include "job_manager.h"
+
+
+extern void trace_file(const std::string &file_name);
+
+sort_file_async::sort_file_async(const std::string &input_file_name,
+				 const std::string &output_file_name)
+	: sort_file(input_file_name, output_file_name)
+	  , _job_mgr(NULL)
+{
+	_job_mgr = new job_manager();
+}
+
+sort_file_async::~sort_file_async()
+{
+	/* Release the Job Manager */
+	if(_job_mgr)
+		delete _job_mgr;
+	_job_mgr = NULL;
+}
+
+void sort_file_async::pause()
+{
+	get_job_manager()->pause();
+}
+
+void sort_file_async::resume()
+{
+	get_job_manager()->resume();
+}
+
+void sort_file_async::cancel()
+{
+	get_job_manager()->stop();
+}
+
+void sort_file_async::sort_buckets()
+{
+	/* Perform bucket sort in multithreaded mode */
+	get_job_manager()->start();
+	for(size_t i = 0; i < get_bucket_manager()->get_bucket_number(); i ++) {
+		bucket *b = get_bucket_manager()->get_bucket(i);
+		if(b)
+			get_job_manager()->add(new sort_bucket_job(b));
+	}
+
+	get_job_manager()->stop();
+}
+
+job_manager *sort_file_async::get_job_manager() const
+{
+	return _job_mgr;
+}
+
+/**
+ * sort_file_async.h
+ * This is a class for sorting a file of items in a multithreading mode
+ */
+
+#ifndef _SORT_FILE_ASYNC_H_INCLUDED_
+#define _SORT_FILE_ASYNC_H_INCLUDED_
+
+#include "sort_file.h"
+
+class job_manager;
+
+class sort_file_async : public sort_file {
+protected:
+	/* Thread Pull */
+	job_manager *_job_mgr;
+
+public:
+	sort_file_async(const std::string &input_file_name,
+			const std::string &output_file_name);
+	virtual ~sort_file_async();
+public:
+	/*
+	 * We can re-use the same algorithm as we have
+	 * for single-tread mode.
+	 * On the other hand, in a multithreading mode we can implement
+	 * pause and cancel services.
+	 */
+	virtual void pause();
+	virtual void resume();
+	virtual void cancel();
+protected:
+	virtual void sort_buckets();
+protected:
+	job_manager *get_job_manager() const;
+};
+
+#endif /* _SORT_FILE_ASYNC_H_INCLUDED_ */
+
+/**
+* utils.cpp
+ */
+
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <sys/timeb.h>
+#include "common.h"
+#include "bucket_manager.h"
+
+static bucket_manager reference(NULL);
+
+void test_generate_input_file(const std::string &file_name, const size_t N)
+{
+
+	//cout << "Writing data into test file..." << endl;
+	std::ofstream f;
+	f.open(file_name.c_str(), std::ios::out | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
+		return;
+	}
+	for(size_t i = 0; i < N; i ++) {
+		//DATA_TYPE val = (DATA_TYPE)rand();
+		int tmp = reference.get_val_min() +
+			rand() % reference.get_val_max();
+		if(tmp < 0)
+			tmp *= -1;
+		DATA_TYPE val = (DATA_TYPE)tmp;
+		//val = 3;
+		f.write((char *)(&val), sizeof(val));
+	}
+	f.close();
+}
+
+bool is_file_sorted(const std::string &file_name)
+{
+	std::ifstream f;
+	f.open(file_name.c_str(), std::ios::in | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
+		return false;
+	}
+	DATA_TYPE val = reference.get_val_min();
+	DATA_TYPE prev_val = reference.get_val_min();
+	bool ok = true;
+	while(true) {
+		f.read((char *)(&val), sizeof(val));
+		if(f.eof())
+			break;
+		if(val < prev_val) {
+			ok = false;
+			break;
+		}
+		prev_val = val;
+	}
+	f.close();
+	return ok;
+}
+
+bool test_check_file(const std::string &file_name)
+{
+	return is_file_sorted(file_name);
+}
+
+void trace_file(const std::string &file_name)
+{
+	std::cout << "File " << file_name << " contents:" << std::endl;
+	std::ifstream f;
+	f.open(file_name.c_str(), std::ios::in | std::ios::binary);
+	if(!f.is_open()) {
+		std::cout << "ERROR Opening File: " << file_name << std::endl;
+		return;
+	}
+	f.seekg (0, f.beg);
+	DATA_TYPE val = 0;
+	while(true) {
+		f.read((char *)(&val), sizeof(val));
+		if(f.eof())
+			break;
+		std::cout << val << " " ;
+	}
+	f.close();
+	std::cout << std::endl << std::endl;
+}
+
+int __get_milli_count()
+{
+	timeb tb;
+	ftime(&tb);
+	int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
+	return nCount;
+}
+
+int __get_milli_span(int nTimeStart)
+{
+	int nSpan = __get_milli_count() - nTimeStart;
+	if (nSpan < 0)
+		nSpan += 0x100000 * 1000;
+	return nSpan;
+}
+
+/*
+ * This is a demo implementation of a module, sorting a file of something.
+ *
+ * Main requirements are following:
+ * * the file may be small, big or very big
+ * * the file may contain integers or something else
+ * * the sorting may be performed in a single-treaded or multi-threaded mode
+ * .
+ *
+ * The module implements a conception of Bucket Sort, which defined as
+ * following:
+ *
+ * BucketSort(arr[], n)
+ * 1. Create n empty buckets
+ * 2. For each arr[i]:
+ * 2.a insert arr[i] into corresponding bucket[B(arr[i])], where B is a
+ * function to detect the index of the bucket in which to put the item
+ * 3. Sort buckets individually
+ * 4. Concatenate buckets
+ *
+ */
+/*
+ * This is a demo implementation of a module, sorting a file of something.
+ *
+ * Main requirements are following:
+ * * the file may be small, big or very big
+ * * the file may contain integers or something else
+ * * the sorting may be performed in a single-treaded or multi-threaded mode
+ * .
+ *
+ * The module implements a conception of Bucket Sort, which defined as
+ * following:
+ *
+ * BucketSort(arr[], n)
+ * 1. Create n empty buckets
+ * 2. For each arr[i]:
+ * 2.a insert arr[i] into corresponding bucket[B(arr[i])], where B is a
+ * function to detect the index of the bucket in which to put the item
+ * 3. Sort buckets individually
+ * 4. Concatenate buckets
+ *
+ */
+
+#include <iostream>
+
+// For generating test input
+#include <stdlib.h>
+#include <time.h>
+
+// System constants
+#include "common.h"
+
+// File sorting algorithm
+#include "sort_file.h"
+#include "sort_file_async.h"
+
+
+extern void test_generate_input_file(const std::string &file_name,
+				     const size_t N);
+
+extern void trace_file(const std::string &file_name);
+
+extern bool test_check_file(const std::string &file_name);
+
+int __get_milli_count();
+
+int __get_milli_span(int nTimeStart);
+
+int main()
+{
+	srand(time(NULL));
+
+	const int start_time = __get_milli_count();
+
+	for(size_t test = 0; test < TEST_NUMBER; test ++) {
+		std::cout << "Test: " << test << "..." << std::endl;
+
+		const std::string input_file_name = "test.dat";
+		const std::string output_file_name = "result.dat";
+
+		/* 1. Prepare test file with items to be sorted */
+		test_generate_input_file(input_file_name, INPUT_SIZE);
+		if(test_check_file(input_file_name))
+			std::cout << "WOOOAA input file is sorted already"
+				<< std::endl;
+
+		/* 2. Run sort algorithm
+		 * The synchronous alg is about 15% worse than
+		 * asynchronous one */
+		if(test % 2) {	/* switch both algs */
+		//if(false) {		/* run only async */
+		//if(true) {		/* run only sync */
+			std::cout << "sorting in a single thread......"
+				<< std::endl;
+			sort_file s(input_file_name, output_file_name);
+			s.start();
+		} else {
+			std::cout << "sorting in multi threads......"
+				<< std::endl;
+			sort_file_async s(input_file_name, output_file_name);
+			s.start();
+		}
+
+		/* 3. Check if sort was done correct */
+		if(test_check_file(output_file_name))
+			std::cout << "OK" << std::endl;
+		else {
+			std::cout << "ERROR OF SORTING!!!" << std::endl;
+			trace_file(input_file_name);
+			trace_file(output_file_name);
+			break;
+		}
+	}
+
+	const int milsec = __get_milli_span(start_time);
+	std::cout << "Tests finished in " << milsec << " milsec" << std::endl;
+
+	return 0;
+}
