@@ -11,6 +11,7 @@
 
 static bucket_manager reference(NULL);
 
+/* TODO: delete this function */
 void test_generate_input_file(const std::string &file_name, const size_t N)
 {
 

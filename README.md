@@ -106,7 +106,6 @@ Experiments
 
 Tests demonstrated that multithreaded variant is about 35% faster than a
 singlethreaded one.
-
 Test conditions were following:
  * input file item number: 5 000 000
  * item value range: 0 ... UINT_MAX
