@@ -89,7 +89,7 @@ s.start();
 
 How to build
 -----------
-g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp -lpthread
+g++ -Wall -o test sort_in_file.cpp sort_file.cpp bucket.cpp resource_monitor.cpp bucket_manager.cpp sort_file_async.cpp job_manager.cpp scope_mutex.cpp utils.cpp utc.cpp -lpthread
 
 g++/gcc 4.8.1
 
