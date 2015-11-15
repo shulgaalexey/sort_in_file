@@ -81,19 +81,28 @@ int main()
 
 	/* Group of Input File Generators */
 	std::vector<input_file_generator *> generators;
-	//generators.push_back(new rand_file_geneator(input_file_name, INPUT_SIZE));
-	//generators.push_back(new const_value_file_geneator(input_file_name,
-	//			INPUT_SIZE, MIN_VALUE));
-	generators.push_back(new const_value_file_geneator(input_file_name,
-				INPUT_SIZE, MAX_VALUE));
-	//generators.push_back(new const_value_file_geneator(input_file_name,
-	//			INPUT_SIZE, 1));
-	//generators.push_back(new const_value_file_geneator(input_file_name,
-	//			INPUT_SIZE, MAX_VALUE - 1));
-	//generators.push_back(new const_value_file_geneator(input_file_name,
-	//			INPUT_SIZE, (MAX_VALUE - MIN_VALUE) / 2));
-	//generators.push_back(new sorted_file_geneator(input_file_name, INPUT_SIZE));
-	//generators.push_back(new reverse_sorted_file_geneator(input_file_name, INPUT_SIZE));*/
+	if(1)
+		generators.push_back(new rand_file_geneator(input_file_name, INPUT_SIZE));
+	if(1)
+		generators.push_back(new const_value_file_geneator(input_file_name,
+					INPUT_SIZE, MIN_VALUE));
+	if(1)
+		generators.push_back(new const_value_file_geneator(input_file_name,
+					INPUT_SIZE, MAX_VALUE));
+	if(1)
+		generators.push_back(new const_value_file_geneator(input_file_name,
+					INPUT_SIZE, 1));
+	if(1)
+		generators.push_back(new const_value_file_geneator(input_file_name,
+					INPUT_SIZE, MAX_VALUE - 1));
+	if(1)
+		generators.push_back(new const_value_file_geneator(input_file_name,
+					INPUT_SIZE, (MAX_VALUE - MIN_VALUE) / 2));
+	if(1)
+		generators.push_back(new sorted_file_geneator(input_file_name, INPUT_SIZE));
+	if(1)
+		generators.push_back(new reverse_sorted_file_geneator(input_file_name,
+					INPUT_SIZE));
 
 
 	const int start_time = __get_milli_count();
@@ -106,6 +115,9 @@ int main()
 		//test_generate_input_file(input_file_name, INPUT_SIZE);
 		input_file_generator *gen = generators[test % generators.size()];
 		gen->start();
+
+		/*trace_file(input_file_name);*/
+
 		if(test_check_file(input_file_name))
 			std::cout << "WOOOAA input file is sorted already"
 				<< std::endl;

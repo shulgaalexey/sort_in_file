@@ -105,6 +105,8 @@ void sorted_file_geneator::start()
 	if(range <= 0)
 		range = 1;
 	size_t cnt = _item_number / range;
+	if(cnt < 1)
+		cnt = 1;
 
 	DATA_TYPE val = reference.get_val_min();
 	size_t count_down = cnt;
@@ -144,6 +146,8 @@ void reverse_sorted_file_geneator::start()
 	if(range <= 0)
 		range = 1;
 	size_t cnt = _item_number / range;
+	if(cnt < 1)
+		cnt = 1;
 
 	DATA_TYPE val = reference.get_val_max();
 	size_t count_down = cnt;
