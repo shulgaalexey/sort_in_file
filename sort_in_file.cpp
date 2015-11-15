@@ -54,6 +54,11 @@
 #include "sort_file.h"
 #include "sort_file_async.h"
 
+// Unit test tools
+#include "utc.h"
+
+#include <vector>
+
 
 extern void test_generate_input_file(const std::string &file_name,
 				     const size_t N);
@@ -62,24 +67,45 @@ extern void trace_file(const std::string &file_name);
 
 extern bool test_check_file(const std::string &file_name);
 
-int __get_milli_count();
+extern int __get_milli_count();
 
-int __get_milli_span(int nTimeStart);
+extern int __get_milli_span(int nTimeStart);
+
 
 int main()
 {
 	srand(time(NULL));
+
+	const std::string input_file_name = "test.dat";
+	const std::string output_file_name = "result.dat";
+
+	/* Group of Input File Generators */
+	std::vector<input_file_generator *> generators;
+	generators.push_back(new rand_file_geneator(input_file_name, INPUT_SIZE));
+	/*generators.push_back(new const_value_file_geneator(input_file_name,
+				INPUT_SIZE, MIN_VALUE));
+	generators.push_back(new const_value_file_geneator(input_file_name,
+				INPUT_SIZE, MAX_VALUE));
+	generators.push_back(new const_value_file_geneator(input_file_name,
+				INPUT_SIZE, 1));
+	generators.push_back(new const_value_file_geneator(input_file_name,
+				INPUT_SIZE, MAX_VALUE - 1));
+	generators.push_back(new const_value_file_geneator(input_file_name,
+				INPUT_SIZE, (MAX_VALUE - MIN_VALUE) / 2));
+	generators.push_back(new sorted_file_geneator(input_file_name, INPUT_SIZE));
+	generators.push_back(new reverse_sorted_file_geneator(input_file_name, INPUT_SIZE));*/
+
 
 	const int start_time = __get_milli_count();
 
 	for(size_t test = 0; test < TEST_NUMBER; test ++) {
 		std::cout << "Test: " << test << "..." << std::endl;
 
-		const std::string input_file_name = "test.dat";
-		const std::string output_file_name = "result.dat";
 
 		/* 1. Prepare test file with items to be sorted */
-		test_generate_input_file(input_file_name, INPUT_SIZE);
+		//test_generate_input_file(input_file_name, INPUT_SIZE);
+		input_file_generator *gen = generators[test % generators.size()];
+		gen->start();
 		if(test_check_file(input_file_name))
 			std::cout << "WOOOAA input file is sorted already"
 				<< std::endl;
@@ -114,6 +140,11 @@ int main()
 
 	const int milsec = __get_milli_span(start_time);
 	std::cout << "Tests finished in " << milsec << " milsec" << std::endl;
+
+	/* Release Input Test File Generators */
+	for(size_t i = 0; i < generators.size(); i ++)
+		delete generators[i];
+	generators.clear();
 
 	return 0;
 }

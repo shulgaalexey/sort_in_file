@@ -44,7 +44,7 @@ void rand_file_geneator::start()
 		std::cout << "ERROR Opening File: " << _input_file_name << std::endl;
 		return;
 	}
-	for(size_t i = 0; i < N; i ++) {
+	for(size_t i = 0; i < _item_number; i ++) {
 		int tmp = reference.get_val_min() +
 			rand() % reference.get_val_max();
 		if(tmp < 0)
@@ -58,7 +58,7 @@ void rand_file_geneator::start()
 
 const_value_file_geneator::const_value_file_geneator(const std::string &input_file_name,
 			const size_t item_number,
-			const DATA_TYPE &value);
+			const DATA_TYPE &value)
 	: input_file_generator(input_file_name, item_number)
 	, _value(value)
 {
@@ -76,9 +76,9 @@ void const_value_file_geneator::start()
 		std::cout << "ERROR Opening File: " << _input_file_name << std::endl;
 		return;
 	}
-	for(size_t i = 0; i < N; i ++)
+	for(size_t i = 0; i < _item_number; i ++)
 		f.write((char *)(&_value), sizeof(_value));
-	f.close()
+	f.close();
 }
 
 
@@ -108,7 +108,7 @@ void sorted_file_geneator::start()
 
 	DATA_TYPE val = reference.get_val_min();
 	size_t count_down = cnt;
-	for(size_t i = 0; i < N; i ++) {
+	for(size_t i = 0; i < _item_number; i ++) {
 		f.write((char *)(&val), sizeof(val));
 		count_down --;
 		if(count_down == 0) {
@@ -117,7 +117,7 @@ void sorted_file_geneator::start()
 		}
 
 	}
-	f.close()
+	f.close();
 }
 
 
@@ -147,7 +147,7 @@ void reverse_sorted_file_geneator::start()
 
 	DATA_TYPE val = reference.get_val_max();
 	size_t count_down = cnt;
-	for(size_t i = 0; i < N; i ++) {
+	for(size_t i = 0; i < _item_number; i ++) {
 		f.write((char *)(&val), sizeof(val));
 		count_down --;
 		if(count_down == 0) {
@@ -156,7 +156,7 @@ void reverse_sorted_file_geneator::start()
 		}
 
 	}
-	f.close()
+	f.close();
 }
 
 /*---------------------------------------------------------------------------*/

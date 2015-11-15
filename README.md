@@ -58,6 +58,7 @@ The product of the project is a pair of classes, performing sort of binary files
 * sort_file - sorting a file in a singlethread mode
 
 ```
+#include <string>
 #include "sort_file.h"
 
 // Defining input and output file names
@@ -73,6 +74,7 @@ s.start();
 * sort_file_async - sorting a file in a multithread mode
 
 ```
+#include <string>
 #include "sort_file_async.h"
 
 // Defining input and output file names
