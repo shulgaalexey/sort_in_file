@@ -54,7 +54,10 @@ void bucket_manager::fluch_buckets()
 
 size_t bucket_manager::get_bucket_no(const DATA_TYPE &val)
 {
-	return size_t(val / get_bucket_range_size());
+	size_t bucket_no = size_t(val / get_bucket_range_size());
+	if(bucket_no >= get_bucket_number())
+		bucket_no = get_bucket_number() - 1;
+	return bucket_no;
 }
 
 bucket *bucket_manager::get_bucket(size_t bucket_no) const

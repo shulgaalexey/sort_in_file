@@ -81,19 +81,19 @@ int main()
 
 	/* Group of Input File Generators */
 	std::vector<input_file_generator *> generators;
-	generators.push_back(new rand_file_geneator(input_file_name, INPUT_SIZE));
-	/*generators.push_back(new const_value_file_geneator(input_file_name,
-				INPUT_SIZE, MIN_VALUE));
+	//generators.push_back(new rand_file_geneator(input_file_name, INPUT_SIZE));
+	//generators.push_back(new const_value_file_geneator(input_file_name,
+	//			INPUT_SIZE, MIN_VALUE));
 	generators.push_back(new const_value_file_geneator(input_file_name,
 				INPUT_SIZE, MAX_VALUE));
-	generators.push_back(new const_value_file_geneator(input_file_name,
-				INPUT_SIZE, 1));
-	generators.push_back(new const_value_file_geneator(input_file_name,
-				INPUT_SIZE, MAX_VALUE - 1));
-	generators.push_back(new const_value_file_geneator(input_file_name,
-				INPUT_SIZE, (MAX_VALUE - MIN_VALUE) / 2));
-	generators.push_back(new sorted_file_geneator(input_file_name, INPUT_SIZE));
-	generators.push_back(new reverse_sorted_file_geneator(input_file_name, INPUT_SIZE));*/
+	//generators.push_back(new const_value_file_geneator(input_file_name,
+	//			INPUT_SIZE, 1));
+	//generators.push_back(new const_value_file_geneator(input_file_name,
+	//			INPUT_SIZE, MAX_VALUE - 1));
+	//generators.push_back(new const_value_file_geneator(input_file_name,
+	//			INPUT_SIZE, (MAX_VALUE - MIN_VALUE) / 2));
+	//generators.push_back(new sorted_file_geneator(input_file_name, INPUT_SIZE));
+	//generators.push_back(new reverse_sorted_file_geneator(input_file_name, INPUT_SIZE));*/
 
 
 	const int start_time = __get_milli_count();
