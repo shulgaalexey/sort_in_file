@@ -11,29 +11,6 @@
 
 static bucket_manager reference(NULL);
 
-/* TODO: delete this function */
-void test_generate_input_file(const std::string &file_name, const size_t N)
-{
-
-	//cout << "Writing data into test file..." << endl;
-	std::ofstream f;
-	f.open(file_name.c_str(), std::ios::out | std::ios::binary);
-	if(!f.is_open()) {
-		std::cout << "ERROR Opening File: " << file_name << std::endl;
-		return;
-	}
-	for(size_t i = 0; i < N; i ++) {
-		//DATA_TYPE val = (DATA_TYPE)rand();
-		int tmp = reference.get_val_min() +
-			rand() % reference.get_val_max();
-		if(tmp < 0)
-			tmp *= -1;
-		DATA_TYPE val = (DATA_TYPE)tmp;
-		//val = 3;
-		f.write((char *)(&val), sizeof(val));
-	}
-	f.close();
-}
 
 bool is_file_sorted(const std::string &file_name)
 {
