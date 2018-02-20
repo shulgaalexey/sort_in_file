@@ -8,13 +8,13 @@ Overview
 
 This is a demo implementation of a module, sorting a file of something.
 
-###Main requirements
+### Main requirements
 * the file may be small, big or very big
 * the file may contain unsigned integers or something else
 * the sorting may be performed in a single-treaded or multi-threaded mode
 
 
-###Discussion of a basic sorting approach
+### Discussion of a basic sorting approach
 The module implements a conception of Bucket Sort, which is defined as following:
 BucketSort(arr[], n)
 * Create n empty buckets
@@ -27,7 +27,7 @@ BucketSort(arr[], n)
 Note, Counting Sort might be applied as well, but for the realy huge files,
 as believed, the Bucket Sort would be more reliable solution.
 
-###Details of the task
+### Details of the task
 Sort a binary file of unsigned 32-bit integers in ascending order in the
 assumption that the file size is significantly larger than available memory.
 
