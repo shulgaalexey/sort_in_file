@@ -1,5 +1,3 @@
-# sort_in_file
-
 Sorting in the File
 ===================
 
